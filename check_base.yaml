@@ -1,0 +1,37 @@
+
+defaults:
+    request_headers:
+        x-auth-token: $ENVIRON['TOKEN']
+        accept: application/json
+        content-type: application/json
+    #verbose: true
+
+tests:
+
+- name: check for our local compute node
+  GET: /placement/resource_providers?name=$ENVIRON['RP_NAME']
+  response_json_paths:
+      $.resource_providers.`len`: 1
+
+- name: get that rp 
+  GET: $RESPONSE['$.resource_providers[0].links[?rel = "self"].href']
+
+- name: get inventories
+  GET: $LAST_URL/inventories
+  response_json_paths:
+      # https://github.com/cdent/gabbi/issues/166
+      # $.inventories.MEMORY_MB.total: /\d+/
+      $.inventories.MEMORY_MB.allocation_ratio: 1.5
+
+- name: get our local compute node
+  GET: /placement/resource_providers?name=$ENVIRON['RP_NAME']
+  response_json_paths:
+      $.resource_providers.`len`: 1
+
+- name: get compute node rp 
+  GET: $RESPONSE['$.resource_providers[0].links[?rel = "self"].href']
+
+- name: get usages before any allocations
+  GET: $LAST_URL/usages
+  response_json_paths:
+      $.usages.MEMORY_MB: 0

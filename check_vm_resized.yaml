@@ -1,0 +1,27 @@
+
+defaults:
+    request_headers:
+        x-auth-token: $ENVIRON['TOKEN']
+        accept: application/json
+        content-type: application/json
+    #verbose: true
+
+tests:
+
+- name: get our local compute node
+  GET: /placement/resource_providers?name=$ENVIRON['RP_NAME']
+  response_json_paths:
+      $.resource_providers.`len`: 1
+
+- name: get that rp 
+  GET: $RESPONSE['$.resource_providers[0].links[?rel = "self"].href']
+
+# We need to delay for a while here because the updates from the
+# resize will be via a heal in the resource tracker, not directly.
+- name: get usages after resize
+  GET: $LAST_URL/usages
+  poll:
+      count: 70
+      delay: 1
+  response_json_paths:
+      $.usages.MEMORY_MB: 512
